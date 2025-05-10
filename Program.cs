@@ -29,7 +29,7 @@ builder.Services.AddCors(options =>
             "https://www.seanththomas.com",
             "http://seanththomas.com",
             "http://www.seanththomas.com",
-            "https://www.seanthomas.com/portfolio")
+            "https://www.seanhthomas.com/portfolio")
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials(); // Add this line
