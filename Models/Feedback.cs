@@ -1,7 +1,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 
-namespace PORTFOLIO-BACKEND.Models
+namespace FeedbackApi.Models
 {
     public class Feedback
     {

@@ -1,10 +1,8 @@
-using System;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using PORTFOLIO_BACKEND.Data;
+using FeedbackApi.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -53,7 +51,6 @@ else
 }
 
 // Ensure database is created and migrations are applied on startup
-// This is particularly important for Heroku where we can't run migrations manually
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<FeedbackDbContext>();
@@ -63,9 +60,6 @@ using (var scope = app.Services.CreateScope())
         // This will create the database if it doesn't exist
         // and apply any pending migrations
         dbContext.Database.Migrate();
-        
-        // Alternatively, if you're having issues with migrations:
-        // dbContext.Database.EnsureCreated();
         
         Console.WriteLine("Database migration completed successfully.");
     }

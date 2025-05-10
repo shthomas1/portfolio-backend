@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using PORTFOLIO-BACKEND.Models;
+using FeedbackApi.Models;
 
-namespace PORTFOLIO-BACKEND.Data
+namespace FeedbackApi.Data
 {
     public class FeedbackDbContext : DbContext
     {
