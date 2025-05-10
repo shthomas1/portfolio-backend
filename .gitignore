@@ -15,8 +15,8 @@ obj/
 ## Environment variables
 .env
 appsettings.*.json
-!appsettings.json
-!appsettings.Example.json
+appsettings.json
+appsettings.Example.json
 
 ## IDE files
 .idea/
