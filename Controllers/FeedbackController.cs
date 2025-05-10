@@ -1,61 +1,61 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using portfolio_backend.Models;
-using portfolio_backend.Services;
+using Microsoft.EntityFrameworkCore;
+using FeedbackApi.Data;
+using FeedbackApi.Models;
 
-namespace portfolio_backend.Controllers
+namespace FeedbackApi.Controllers
 {
-    [ApiController]
     [Route("api/[controller]")]
+    [ApiController]
     public class FeedbackController : ControllerBase
     {
-        private readonly DatabaseService _databaseService;
-        private readonly ILogger<FeedbackController> _logger;
-
-        public FeedbackController(DatabaseService databaseService, ILogger<FeedbackController> logger)
+        private readonly FeedbackDbContext _context;
+        
+        public FeedbackController(FeedbackDbContext context)
         {
-            _databaseService = databaseService;
-            _logger = logger;
+            _context = context;
         }
-
-        [HttpPost]
-        public async Task<IActionResult> SubmitFeedback([FromBody] Feedback feedback)
-        {
-            if (string.IsNullOrEmpty(feedback.Name) || string.IsNullOrEmpty(feedback.Email))
-            {
-                return BadRequest(new { message = "Name and Email are required" });
-            }
-
-            try
-            {
-                var success = await _databaseService.SaveFeedback(feedback);
-                
-                if (success)
-                {
-                    return Ok(new { message = "Feedback submitted successfully!" });
-                }
-                
-                return StatusCode(500, new { message = "Failed to save feedback." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error saving feedback");
-                return StatusCode(500, new { message = "An error occurred while saving feedback." });
-            }
-        }
-
+        
+        // GET: api/Feedback
         [HttpGet]
-        public async Task<IActionResult> GetAllFeedback()
+        public async Task<ActionResult<IEnumerable<Feedback>>> GetFeedbacks()
         {
-            try
+            return await _context.Feedbacks.ToListAsync();
+        }
+        
+        // GET: api/Feedback/5
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Feedback>> GetFeedback(int id)
+        {
+            var feedback = await _context.Feedbacks.FindAsync(id);
+            
+            if (feedback == null)
             {
-                var feedbackList = await _databaseService.GetAllFeedback();
-                return Ok(feedbackList);
+                return NotFound();
             }
-            catch (Exception ex)
+            
+            return feedback;
+        }
+        
+        // POST: api/Feedback
+        [HttpPost]
+        public async Task<ActionResult<Feedback>> PostFeedback(Feedback feedback)
+        {
+            if (!ModelState.IsValid)
             {
-                _logger.LogError(ex, "Error retrieving feedback");
-                return StatusCode(500, new { message = "An error occurred while retrieving feedback." });
+                return BadRequest(ModelState);
             }
+            
+            feedback.CreatedAt = DateTime.UtcNow; // Set the creation timestamp
+            
+            _context.Feedbacks.Add(feedback);
+            await _context.SaveChangesAsync();
+            
+            return CreatedAtAction(nameof(GetFeedback), new { id = feedback.Id }, feedback);
         }
     }
 }

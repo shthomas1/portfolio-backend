@@ -1,51 +1,47 @@
-using portfolio_backend.Services;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using PORTFOLIO-BACKEND.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure port for Heroku
-var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
-builder.WebHost.UseUrls($"http://+:{port}");
-
-// Add services to the container
+// Add services to the container.
 builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
 
-// Add Swagger without OpenApi
-builder.Services.AddSwaggerGen();
-
-// Configure CORS
+// Add CORS support
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll",
-        builder =>
-        {
-            builder.AllowAnyOrigin()
-                   .AllowAnyMethod()
-                   .AllowAnyHeader();
-        });
+    options.AddPolicy("AllowReactApp", policy =>
+    {
+        policy.WithOrigins("http://localhost:3000") // Your React app's URL
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
 });
 
-// Get connection string from environment variable or configuration
-string connectionString = Environment.GetEnvironmentVariable("DATABASE_URL") ?? 
-    builder.Configuration.GetConnectionString("DefaultConnection");
+// Configure MySQL
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+builder.Services.AddDbContext<FeedbackDbContext>(options =>
+    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 
-// Register the DatabaseService as a singleton
-builder.Services.AddSingleton(new DatabaseService(connectionString));
+// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline
+// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-// Comment out HTTPS redirection for Heroku
-// app.UseHttpsRedirection();
+app.UseHttpsRedirection();
 
-// Use CORS before routing
-app.UseCors("AllowAll");
+// Use CORS
+app.UseCors("AllowReactApp");
 
 app.UseAuthorization();
 
