@@ -18,17 +18,21 @@ builder.Configuration.AddEnvironmentVariables();
 builder.Services.AddControllers();
 
 // Add CORS support
+// Update the CORS configuration to be more specific
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
     {
-        policy.WithOrigins("http://localhost:3000",
+        policy.WithOrigins(
+            "http://localhost:3000",
             "https://seanththomas.com",
-            "https://www.seanththomas.com",  // Add this line
-            "http://seanththomas.com",       // Add this if needed
-            "http://www.seanththomas.com")
+            "https://www.seanththomas.com",
+            "http://seanththomas.com",
+            "http://www.seanththomas.com",
+            "https://www.seanthomas.com/feedback")
               .AllowAnyHeader()
-              .AllowAnyMethod();
+              .AllowAnyMethod()
+              .AllowCredentials(); // Add this line
     });
 });
 
