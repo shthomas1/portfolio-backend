@@ -20,8 +20,9 @@ builder.Services.AddCors(options =>
 });
 
 // Get connection string from environment variable or use the provided one
+// Get connection string from environment variable or configuration
 string connectionString = Environment.GetEnvironmentVariable("DATABASE_URL") ?? 
-    "mysql://blagqvfcqso6b1qv:ya3q0nltkzznr2xg@k2pdcy98kpcsweia.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/a95jbn9sw86796nl";
+    builder.Configuration.GetConnectionString("DefaultConnection");
 
 // Register the DatabaseService as a singleton
 builder.Services.AddSingleton(new DatabaseService(connectionString));
