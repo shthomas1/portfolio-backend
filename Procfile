@@ -1,1 +1,1 @@
-web: dotnet ./bin/Release/net6.0/publish/portfolio-backend.dll --urls=http://+:$PORT
+web: dotnet ./bin/Release/net8.0/publish/portfolio-backend.dll --urls=http://+:$PORT

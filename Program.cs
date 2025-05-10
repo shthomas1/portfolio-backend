@@ -2,13 +2,15 @@ using portfolio_backend.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure to use Heroku's PORT
+// Configure port for Heroku
 var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
 builder.WebHost.UseUrls($"http://+:{port}");
 
 // Add services to the container
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+
+// Add Swagger without OpenApi
 builder.Services.AddSwaggerGen();
 
 // Configure CORS
@@ -38,6 +40,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+// Comment out HTTPS redirection for Heroku
+// app.UseHttpsRedirection();
 
 // Use CORS before routing
 app.UseCors("AllowAll");
