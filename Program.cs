@@ -1,8 +1,10 @@
+using System;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using PORTFOLIO-BACKEND.Data;
+using PORTFOLIO_BACKEND.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,11 +16,18 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
     {
-        policy.WithOrigins("http://localhost:3000") // Your React app's URL
+        policy.WithOrigins("http://localhost:3000", "https://your-frontend-domain.com") // Add your production frontend URL
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
 });
+
+// Configure for Heroku - get port from environment variable
+var port = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrEmpty(port))
+{
+    builder.WebHost.UseUrls($"http://*:{port}");
+}
 
 // Configure MySQL
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -37,8 +46,45 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+else
+{
+    // In production, you might want to handle exceptions differently
+    app.UseExceptionHandler("/Error");
+}
 
-app.UseHttpsRedirection();
+// Ensure database is created and migrations are applied on startup
+// This is particularly important for Heroku where we can't run migrations manually
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<FeedbackDbContext>();
+    
+    try
+    {
+        // This will create the database if it doesn't exist
+        // and apply any pending migrations
+        dbContext.Database.Migrate();
+        
+        // Alternatively, if you're having issues with migrations:
+        // dbContext.Database.EnsureCreated();
+        
+        Console.WriteLine("Database migration completed successfully.");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"An error occurred while migrating the database: {ex.Message}");
+    }
+}
+
+// For Heroku, you might want to disable HTTPS redirection
+// since Heroku handles HTTPS at the load balancer level
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+else
+{
+    app.UseHttpsRedirection();
+}
 
 // Use CORS
 app.UseCors("AllowReactApp");
