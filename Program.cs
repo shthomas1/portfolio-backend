@@ -5,6 +5,9 @@ using Microsoft.Extensions.Hosting;
 using FeedbackApi.Data;
 using Microsoft.OpenApi.Models;
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,13 +37,24 @@ if (!string.IsNullOrEmpty(port))
     Console.WriteLine($"Configured to listen on PORT: {port}");
 }
 
-// Handle JawsDB URL for Heroku
-var jawsDbUrl = Environment.GetEnvironmentVariable("JAWSDB_URL");
+// Handle database connection string
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-if (!string.IsNullOrEmpty(jawsDbUrl))
+// If no connection string from config, try environment variable directly
+if (string.IsNullOrEmpty(connectionString))
 {
-    Console.WriteLine("Found JAWSDB_URL environment variable");
+    connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
+    if (!string.IsNullOrEmpty(connectionString))
+    {
+        Console.WriteLine("Using connection string from environment variable");
+    }
+}
+
+// Also check for JAWSDB_URL
+var jawsDbUrl = Environment.GetEnvironmentVariable("JAWSDB_URL");
+if (string.IsNullOrEmpty(connectionString) && !string.IsNullOrEmpty(jawsDbUrl))
+{
+    Console.WriteLine("Found JAWSDB_URL, parsing connection string");
     try 
     {
         var uri = new Uri(jawsDbUrl);
@@ -52,46 +66,30 @@ if (!string.IsNullOrEmpty(jawsDbUrl))
         var dbPort = uri.Port > 0 ? uri.Port : 3306;
         
         connectionString = $"Server={server};Port={dbPort};Database={database};User={user};Password={password};";
-        Console.WriteLine($"Parsed connection string from JAWSDB_URL: Server={server};Database={database};User={user};Password=********");
+        Console.WriteLine($"Parsed connection string from JAWSDB_URL");
     }
     catch (Exception ex)
     {
         Console.WriteLine($"Error parsing JAWSDB_URL: {ex.Message}");
     }
 }
-else if (!string.IsNullOrEmpty(connectionString))
-{
-    Console.WriteLine("Using connection string from configuration");
-}
-else
-{
-    Console.WriteLine("WARNING: No database connection string found!");
-}
 
-// Configure MySQL - Fixed version
+Console.WriteLine($"Connection string status: {(!string.IsNullOrEmpty(connectionString) ? "Found" : "Not found")}");
+
+// Configure MySQL with the connection string
 if (!string.IsNullOrEmpty(connectionString))
 {
-    Console.WriteLine($"Configuring database with connection string: {connectionString?.Split(';')[0]}");
-    
-    // Use a specific MySQL server version instead of auto-detect
     var serverVersion = new MySqlServerVersion(new Version(8, 0, 21));
     
-    try
-    {
-        builder.Services.AddDbContext<FeedbackDbContext>(options =>
-            options.UseMySql(connectionString, serverVersion));
-        Console.WriteLine("Database context configured successfully");
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Error configuring database context: {ex.Message}");
-        Console.WriteLine($"Stack trace: {ex.StackTrace}");
-    }
+    builder.Services.AddDbContext<FeedbackDbContext>(options =>
+        options.UseMySql(connectionString, serverVersion));
+    
+    Console.WriteLine("Database context configured");
 }
 else
 {
-    Console.WriteLine("ERROR: No connection string available, database will not be configured");
-    // Add a dummy DbContext to prevent DI errors
+    Console.WriteLine("ERROR: No connection string found!");
+    // Use in-memory database as fallback
     builder.Services.AddDbContext<FeedbackDbContext>(options =>
         options.UseInMemoryDatabase("TestDb"));
 }
@@ -137,8 +135,75 @@ app.MapGet("/health", () => new
         port = Environment.GetEnvironmentVariable("PORT") ?? "Not set",
         jawsDbUrl = Environment.GetEnvironmentVariable("JAWSDB_URL") != null ? 
             $"Set (length: {Environment.GetEnvironmentVariable("JAWSDB_URL").Length})" : "Not set",
+        connectionStringsDefaultConnection = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection") != null ?
+            $"Set (length: {Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection").Length})" : "Not set",
         aspNetCoreEnvironment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Not set"
     }
+});
+
+// Test database endpoint
+app.MapGet("/test-db", async () =>
+{
+    var result = new Dictionary<string, object>();
+    
+    try
+    {
+        using var scope = app.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<FeedbackDbContext>();
+        
+        // Test basic connection
+        var canConnect = await dbContext.Database.CanConnectAsync();
+        result["canConnect"] = canConnect;
+        
+        // Get actual connection string being used (masked)
+        var activeConnStr = dbContext.Database.GetConnectionString();
+        if (activeConnStr != null)
+        {
+            var parts = activeConnStr.Split(';');
+            result["server"] = parts.FirstOrDefault(p => p.StartsWith("Server="))?.Replace("Server=", "") ?? "Unknown";
+        }
+        
+        // Check if tables exist
+        if (canConnect)
+        {
+            try
+            {
+                var feedbackCount = await dbContext.Feedbacks.CountAsync();
+                result["feedbackCount"] = feedbackCount;
+                result["feedbacksTableExists"] = true;
+            }
+            catch (Exception tableEx)
+            {
+                result["feedbacksTableExists"] = false;
+                result["tableError"] = tableEx.Message;
+                
+                // Try to create the table
+                try
+                {
+                    await dbContext.Database.EnsureCreatedAsync();
+                    result["tableCreationAttempt"] = "Success";
+                }
+                catch (Exception createEx)
+                {
+                    result["tableCreationAttempt"] = "Failed";
+                    result["tableCreationError"] = createEx.Message;
+                }
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        result["error"] = ex.Message;
+        result["type"] = ex.GetType().Name;
+        if (ex.InnerException != null)
+        {
+            result["innerError"] = ex.InnerException.Message;
+            result["innerType"] = ex.InnerException.GetType().Name;
+        }
+    }
+    
+    result["timestamp"] = DateTime.UtcNow;
+    return result;
 });
 
 // Test database after app startup, with better error handling

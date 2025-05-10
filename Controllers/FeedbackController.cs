@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using FeedbackApi.Data;
 using FeedbackApi.Models;
+using MySqlConnector;
 
 namespace FeedbackApi.Controllers
 {
@@ -22,17 +23,31 @@ namespace FeedbackApi.Controllers
         
         // GET: api/Feedback
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Feedback>>> GetFeedbacks()
+        public async Task<ActionResult> GetFeedbacks()
         {
             try
             {
                 Console.WriteLine("Attempting to get feedbacks from database...");
                 var feedbacks = await _context.Feedbacks.ToListAsync();
                 Console.WriteLine($"Successfully retrieved {feedbacks.Count} feedbacks");
-                return feedbacks;
+                return Ok(feedbacks);
+            }
+            catch (MySqlException ex)
+            {
+                // Specific MySQL errors
+                Console.WriteLine($"MySQL Error in GetFeedbacks: {ex.Message}");
+                return StatusCode(500, new 
+                { 
+                    error = "MySQL Error",
+                    message = ex.Message,
+                    number = ex.Number,
+                    sqlState = ex.SqlState,
+                    timestamp = DateTime.UtcNow
+                });
             }
             catch (Exception ex)
             {
+                // General errors
                 Console.WriteLine($"ERROR in GetFeedbacks: {ex.GetType().Name}");
                 Console.WriteLine($"Error message: {ex.Message}");
                 Console.WriteLine($"Stack trace: {ex.StackTrace}");
@@ -41,15 +56,14 @@ namespace FeedbackApi.Controllers
                 {
                     Console.WriteLine($"Inner exception type: {ex.InnerException.GetType().Name}");
                     Console.WriteLine($"Inner exception message: {ex.InnerException.Message}");
-                    Console.WriteLine($"Inner exception stack trace: {ex.InnerException.StackTrace}");
                 }
                 
                 return StatusCode(500, new 
                 { 
-                    error = "Database error",
+                    error = "Database Error",
                     message = ex.Message,
-                    innerMessage = ex.InnerException?.Message,
                     type = ex.GetType().Name,
+                    innerMessage = ex.InnerException?.Message,
                     timestamp = DateTime.UtcNow
                 });
             }
