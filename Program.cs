@@ -22,8 +22,11 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
     {
-        policy.WithOrigins("http://localhost:3000", 
-                          "https://seanththomas.com")
+        policy.WithOrigins("http://localhost:3000",
+            "https://seanththomas.com",
+            "https://www.seanththomas.com",  // Add this line
+            "http://seanththomas.com",       // Add this if needed
+            "http://www.seanththomas.com")
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
@@ -55,7 +58,7 @@ var jawsDbUrl = Environment.GetEnvironmentVariable("JAWSDB_URL");
 if (string.IsNullOrEmpty(connectionString) && !string.IsNullOrEmpty(jawsDbUrl))
 {
     Console.WriteLine("Found JAWSDB_URL, parsing connection string");
-    try 
+    try
     {
         var uri = new Uri(jawsDbUrl);
         var userInfo = uri.UserInfo.Split(':');
@@ -64,7 +67,7 @@ if (string.IsNullOrEmpty(connectionString) && !string.IsNullOrEmpty(jawsDbUrl))
         var user = userInfo[0];
         var password = userInfo[1];
         var dbPort = uri.Port > 0 ? uri.Port : 3306;
-        
+
         connectionString = $"Server={server};Port={dbPort};Database={database};User={user};Password={password};";
         Console.WriteLine($"Parsed connection string from JAWSDB_URL");
     }
@@ -80,10 +83,10 @@ Console.WriteLine($"Connection string status: {(!string.IsNullOrEmpty(connection
 if (!string.IsNullOrEmpty(connectionString))
 {
     var serverVersion = new MySqlServerVersion(new Version(8, 0, 21));
-    
+
     builder.Services.AddDbContext<FeedbackDbContext>(options =>
         options.UseMySql(connectionString, serverVersion));
-    
+
     Console.WriteLine("Database context configured");
 }
 else
@@ -128,12 +131,12 @@ app.MapGet("/health", () => new
 {
     status = "UP",
     timestamp = DateTime.UtcNow,
-    databaseConnectionString = !string.IsNullOrEmpty(connectionString) ? 
+    databaseConnectionString = !string.IsNullOrEmpty(connectionString) ?
         $"Configured (length: {connectionString.Length})" : "Not configured",
-    environmentVariables = new 
+    environmentVariables = new
     {
         port = Environment.GetEnvironmentVariable("PORT") ?? "Not set",
-        jawsDbUrl = Environment.GetEnvironmentVariable("JAWSDB_URL") != null ? 
+        jawsDbUrl = Environment.GetEnvironmentVariable("JAWSDB_URL") != null ?
             $"Set (length: {Environment.GetEnvironmentVariable("JAWSDB_URL").Length})" : "Not set",
         connectionStringsDefaultConnection = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection") != null ?
             $"Set (length: {Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection").Length})" : "Not set",
@@ -145,16 +148,16 @@ app.MapGet("/health", () => new
 app.MapGet("/test-db", async () =>
 {
     var result = new Dictionary<string, object>();
-    
+
     try
     {
         using var scope = app.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<FeedbackDbContext>();
-        
+
         // Test basic connection
         var canConnect = await dbContext.Database.CanConnectAsync();
         result["canConnect"] = canConnect;
-        
+
         // Get actual connection string being used (masked)
         var activeConnStr = dbContext.Database.GetConnectionString();
         if (activeConnStr != null)
@@ -162,7 +165,7 @@ app.MapGet("/test-db", async () =>
             var parts = activeConnStr.Split(';');
             result["server"] = parts.FirstOrDefault(p => p.StartsWith("Server="))?.Replace("Server=", "") ?? "Unknown";
         }
-        
+
         // Check if tables exist
         if (canConnect)
         {
@@ -176,7 +179,7 @@ app.MapGet("/test-db", async () =>
             {
                 result["feedbacksTableExists"] = false;
                 result["tableError"] = tableEx.Message;
-                
+
                 // Try to create the table
                 try
                 {
@@ -201,7 +204,7 @@ app.MapGet("/test-db", async () =>
             result["innerType"] = ex.InnerException.GetType().Name;
         }
     }
-    
+
     result["timestamp"] = DateTime.UtcNow;
     return result;
 });
@@ -215,11 +218,11 @@ if (!string.IsNullOrEmpty(connectionString))
         {
             Console.WriteLine("Attempting to resolve DbContext...");
             var dbContext = scope.ServiceProvider.GetRequiredService<FeedbackDbContext>();
-            
+
             Console.WriteLine("Testing database connection...");
             var canConnect = dbContext.Database.CanConnect();
             Console.WriteLine($"Database connection test: {(canConnect ? "Successful" : "Failed")}");
-            
+
             if (canConnect)
             {
                 Console.WriteLine("Creating database if it doesn't exist...");

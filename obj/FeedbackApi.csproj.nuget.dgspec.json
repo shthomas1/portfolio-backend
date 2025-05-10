@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\seant\\Documents\\GitHub\\portfolio-backend\\PORTFOLIO-BACKEND\\PORTFOLIO-BACKEND.csproj": {}
+    "C:\\Users\\seant\\Documents\\GitHub\\portfolio-backend\\FeedbackApi.csproj": {}
   },
   "projects": {
-    "C:\\Users\\seant\\Documents\\GitHub\\portfolio-backend\\PORTFOLIO-BACKEND\\PORTFOLIO-BACKEND.csproj": {
+    "C:\\Users\\seant\\Documents\\GitHub\\portfolio-backend\\FeedbackApi.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\seant\\Documents\\GitHub\\portfolio-backend\\PORTFOLIO-BACKEND\\PORTFOLIO-BACKEND.csproj",
-        "projectName": "PORTFOLIO-BACKEND",
-        "projectPath": "C:\\Users\\seant\\Documents\\GitHub\\portfolio-backend\\PORTFOLIO-BACKEND\\PORTFOLIO-BACKEND.csproj",
+        "projectUniqueName": "C:\\Users\\seant\\Documents\\GitHub\\portfolio-backend\\FeedbackApi.csproj",
+        "projectName": "FeedbackApi",
+        "projectPath": "C:\\Users\\seant\\Documents\\GitHub\\portfolio-backend\\FeedbackApi.csproj",
         "packagesPath": "C:\\Users\\seant\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\seant\\Documents\\GitHub\\portfolio-backend\\PORTFOLIO-BACKEND\\obj\\",
+        "outputPath": "C:\\Users\\seant\\Documents\\GitHub\\portfolio-backend\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\seant\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -43,33 +43,27 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "dependencies": {
-            "Microsoft.AspNetCore.OpenApi": {
+            "Microsoft.EntityFrameworkCore": {
               "target": "Package",
-              "version": "[8.0.12, )"
+              "version": "[8.0.0, )"
             },
             "Microsoft.EntityFrameworkCore.Design": {
               "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
               "suppressParent": "All",
               "target": "Package",
-              "version": "[9.0.4, )"
+              "version": "[8.0.0, )"
             },
-            "Microsoft.EntityFrameworkCore.Tools": {
-              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
-              "suppressParent": "All",
+            "Microsoft.EntityFrameworkCore.InMemory": {
               "target": "Package",
-              "version": "[9.0.4, )"
-            },
-            "MySql.EntityFrameworkCore": {
-              "target": "Package",
-              "version": "[9.0.3, )"
+              "version": "[8.0.0, )"
             },
             "Pomelo.EntityFrameworkCore.MySql": {
               "target": "Package",
-              "version": "[8.0.3, )"
+              "version": "[8.0.0, )"
             },
             "Swashbuckle.AspNetCore": {
               "target": "Package",
-              "version": "[6.6.2, )"
+              "version": "[6.5.0, )"
             }
           },
           "imports": [
