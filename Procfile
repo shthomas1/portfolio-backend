@@ -1,0 +1,1 @@
+web: dotnet run --urls=http://+:$PORT
