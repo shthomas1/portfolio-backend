@@ -7,14 +7,14 @@
   </PropertyGroup>
 
 <ItemGroup>
-  <!-- Make sure all EF Core packages use version 8.0.x -->
-  <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.3" />
-  <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.3">
+  <!-- Update all EF Core packages to version 8.0.13 to match Pomelo's requirements -->
+  <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.13" />
+  <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.13">
     <PrivateAssets>all</PrivateAssets>
     <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
   </PackageReference>
-  <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.3" />
-  <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.3">
+  <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.13" />
+  <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.13">
     <PrivateAssets>all</PrivateAssets>
     <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
   </PackageReference>
