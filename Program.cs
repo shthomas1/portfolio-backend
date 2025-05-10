@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using FeedbackApi.Data;
+using Microsoft.OpenApi.Models; // Add this for Swagger
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,9 +33,12 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<FeedbackDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+// Add Swagger services
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Feedback API", Version = "v1" });
+});
 
 var app = builder.Build();
 
@@ -42,7 +46,7 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Feedback API v1"));
 }
 else
 {
@@ -58,14 +62,13 @@ using (var scope = app.Services.CreateScope())
     try
     {
         // This will create the database if it doesn't exist
-        // and apply any pending migrations
-        dbContext.Database.Migrate();
+        dbContext.Database.EnsureCreated();
         
-        Console.WriteLine("Database migration completed successfully.");
+        Console.WriteLine("Database created successfully.");
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"An error occurred while migrating the database: {ex.Message}");
+        Console.WriteLine($"An error occurred while creating the database: {ex.Message}");
     }
 }
 
@@ -73,7 +76,8 @@ using (var scope = app.Services.CreateScope())
 // since Heroku handles HTTPS at the load balancer level
 if (!app.Environment.IsDevelopment())
 {
-    app.UseHttpsRedirection();
+    // Comment out or remove HTTPS redirection for Heroku
+    // app.UseHttpsRedirection();
 }
 else
 {

@@ -9,12 +9,12 @@ namespace FeedbackApi.Models
         
         [Required]
         [StringLength(100)]
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
         
         [Required]
         [EmailAddress]
         [StringLength(100)]
-        public string Email { get; set; }
+        public string Email { get; set; } = string.Empty;
         
         [Range(1, 10)]
         public int Rating { get; set; }
@@ -29,7 +29,7 @@ namespace FeedbackApi.Models
         public int Content { get; set; }
         
         [StringLength(1000)]
-        public string Comments { get; set; }
+        public string Comments { get; set; } = string.Empty;
         
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
