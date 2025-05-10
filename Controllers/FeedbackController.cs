@@ -15,12 +15,12 @@ namespace FeedbackApi.Controllers
     public class FeedbackController : ControllerBase
     {
         private readonly FeedbackDbContext _context;
-        
+
         public FeedbackController(FeedbackDbContext context)
         {
             _context = context;
         }
-        
+
         // GET: api/Feedback
         [HttpGet]
         public async Task<ActionResult> GetFeedbacks()
@@ -36,8 +36,8 @@ namespace FeedbackApi.Controllers
             {
                 // Specific MySQL errors
                 Console.WriteLine($"MySQL Error in GetFeedbacks: {ex.Message}");
-                return StatusCode(500, new 
-                { 
+                return StatusCode(500, new
+                {
                     error = "MySQL Error",
                     message = ex.Message,
                     number = ex.Number,
@@ -51,15 +51,15 @@ namespace FeedbackApi.Controllers
                 Console.WriteLine($"ERROR in GetFeedbacks: {ex.GetType().Name}");
                 Console.WriteLine($"Error message: {ex.Message}");
                 Console.WriteLine($"Stack trace: {ex.StackTrace}");
-                
+
                 if (ex.InnerException != null)
                 {
                     Console.WriteLine($"Inner exception type: {ex.InnerException.GetType().Name}");
                     Console.WriteLine($"Inner exception message: {ex.InnerException.Message}");
                 }
-                
-                return StatusCode(500, new 
-                { 
+
+                return StatusCode(500, new
+                {
                     error = "Database Error",
                     message = ex.Message,
                     type = ex.GetType().Name,
@@ -68,7 +68,7 @@ namespace FeedbackApi.Controllers
                 });
             }
         }
-        
+
         // GET: api/Feedback/test
         [HttpGet("test")]
         public ActionResult TestDatabase()
@@ -78,9 +78,9 @@ namespace FeedbackApi.Controllers
                 Console.WriteLine("Testing database connection...");
                 var canConnect = _context.Database.CanConnect();
                 Console.WriteLine($"Database connection test result: {(canConnect ? "Connected" : "Cannot connect")}");
-                
-                return Ok(new 
-                { 
+
+                return Ok(new
+                {
                     databaseConnection = canConnect ? "Connected" : "Cannot connect",
                     connectionString = _context.Database.GetConnectionString()?.Split(';')[0] ?? "Not found",
                     timestamp = DateTime.UtcNow
@@ -89,8 +89,8 @@ namespace FeedbackApi.Controllers
             catch (Exception ex)
             {
                 Console.WriteLine($"Database test error: {ex.Message}");
-                return StatusCode(500, new 
-                { 
+                return StatusCode(500, new
+                {
                     error = "Database test failed",
                     message = ex.Message,
                     innerMessage = ex.InnerException?.Message,
@@ -98,7 +98,7 @@ namespace FeedbackApi.Controllers
                 });
             }
         }
-        
+
         // GET: api/Feedback/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Feedback>> GetFeedback(int id)
@@ -106,12 +106,12 @@ namespace FeedbackApi.Controllers
             try
             {
                 var feedback = await _context.Feedbacks.FindAsync(id);
-                
+
                 if (feedback == null)
                 {
                     return NotFound();
                 }
-                
+
                 return feedback;
             }
             catch (Exception ex)
@@ -120,7 +120,7 @@ namespace FeedbackApi.Controllers
                 return StatusCode(500, new { error = ex.Message });
             }
         }
-        
+
         // POST: api/Feedback
         [HttpPost]
         public async Task<ActionResult<Feedback>> PostFeedback(Feedback feedback)
@@ -131,13 +131,14 @@ namespace FeedbackApi.Controllers
                 {
                     return BadRequest(ModelState);
                 }
-                
-                feedback.CreatedAt = DateTime.UtcNow; // Set the creation timestamp
-                
+
+                feedback.CreatedAt = DateTime.UtcNow;
+
                 _context.Feedbacks.Add(feedback);
                 await _context.SaveChangesAsync();
-                
-                return CreatedAtAction(nameof(GetFeedback), new { id = feedback.Id }, feedback);
+
+                // Return a simple Ok response with the feedback object
+                return Ok(feedback);
             }
             catch (Exception ex)
             {
