@@ -50,9 +50,9 @@ if (!string.IsNullOrEmpty(jawsDbUrl))
         var database = uri.AbsolutePath.TrimStart('/');
         var user = userInfo[0];
         var password = userInfo[1];
-        var port = uri.Port > 0 ? uri.Port : 3306;
+        var dbPort = uri.Port > 0 ? uri.Port : 3306; // Changed variable name from 'port' to 'dbPort'
         
-        connectionString = $"Server={server};Port={port};Database={database};User={user};Password={password};";
+        connectionString = $"Server={server};Port={dbPort};Database={database};User={user};Password={password};";
         Console.WriteLine($"Parsed connection string from JAWSDB_URL: Server={server};Database={database};User={user};Password=********");
     }
     catch (Exception ex)
