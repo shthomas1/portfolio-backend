@@ -106,25 +106,34 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+// Enable Swagger in all environments (updated section)
+app.UseSwagger();
+app.UseSwaggerUI(c => 
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Feedback API v1"));
-}
-else
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Feedback API v1");
+    c.RoutePrefix = "swagger"; // Swagger UI will be available at /swagger
+});
+
+// Configure exception handling
+if (!app.Environment.IsDevelopment())
 {
-    // In production, handle exceptions differently
     app.UseExceptionHandler("/Error");
 }
 
-// Add diagnostic endpoints
+// Update the root endpoint to provide links
 app.MapGet("/", () => new
 {
     status = "UP",
     timestamp = DateTime.UtcNow,
     message = "Feedback API is running",
-    connectionString = !string.IsNullOrEmpty(connectionString) ? "Configured" : "Not configured"
+    connectionString = !string.IsNullOrEmpty(connectionString) ? "Configured" : "Not configured",
+    links = new
+    {
+        swagger = "/swagger",
+        health = "/health",
+        testDb = "/test-db",
+        feedback = "/api/feedback"
+    }
 });
 
 app.MapGet("/health", () => new
