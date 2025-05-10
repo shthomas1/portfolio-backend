@@ -1,1 +1,1 @@
-web: dotnet ./bin/Release/net8.0/publish/portfolio-backend.dll --urls=http://+:$PORT
+web: ./bin/Release/net8.0/linux-x64/publish/portfolio-backend --urls=http://+:$PORT
