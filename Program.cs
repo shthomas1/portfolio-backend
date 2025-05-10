@@ -17,22 +17,13 @@ builder.Configuration.AddEnvironmentVariables();
 // Add services to the container.
 builder.Services.AddControllers();
 
-// Add CORS support
-// Update the CORS configuration to be more specific
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
     {
-        policy.WithOrigins(
-            "http://localhost:3000",
-            "https://seanththomas.com",
-            "https://www.seanththomas.com",
-            "http://seanththomas.com",
-            "http://www.seanththomas.com",
-            "https://www.seanhthomas.com/portfolio")
+        policy.AllowAnyOrigin()
               .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials(); // Add this line
+              .AllowAnyMethod();
     });
 });
 
@@ -109,6 +100,8 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 var app = builder.Build();
+
+app.UseCors("AllowReactApp");
 
 // Enable Swagger in all environments (updated section)
 app.UseSwagger();
