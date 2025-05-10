@@ -5,7 +5,6 @@ using Microsoft.Extensions.Hosting;
 using FeedbackApi.Data;
 using Microsoft.OpenApi.Models;
 using System;
-using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -50,7 +49,7 @@ if (!string.IsNullOrEmpty(jawsDbUrl))
         var database = uri.AbsolutePath.TrimStart('/');
         var user = userInfo[0];
         var password = userInfo[1];
-        var dbPort = uri.Port > 0 ? uri.Port : 3306; // Changed variable name from 'port' to 'dbPort'
+        var dbPort = uri.Port > 0 ? uri.Port : 3306;
         
         connectionString = $"Server={server};Port={dbPort};Database={database};User={user};Password={password};";
         Console.WriteLine($"Parsed connection string from JAWSDB_URL: Server={server};Database={database};User={user};Password=********");
@@ -67,19 +66,34 @@ else if (!string.IsNullOrEmpty(connectionString))
 else
 {
     Console.WriteLine("WARNING: No database connection string found!");
-    connectionString = "Server=localhost;Database=feedbackdb;User=root;Password=password;"; // Fallback for dev
 }
 
-// Configure MySQL
-try
+// Configure MySQL - Fixed version
+if (!string.IsNullOrEmpty(connectionString))
 {
-    builder.Services.AddDbContext<FeedbackDbContext>(options =>
-        options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
-    Console.WriteLine("Database context configured successfully");
+    Console.WriteLine($"Configuring database with connection string: {connectionString?.Split(';')[0]}");
+    
+    // Use a specific MySQL server version instead of auto-detect
+    var serverVersion = new MySqlServerVersion(new Version(8, 0, 21));
+    
+    try
+    {
+        builder.Services.AddDbContext<FeedbackDbContext>(options =>
+            options.UseMySql(connectionString, serverVersion));
+        Console.WriteLine("Database context configured successfully");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error configuring database context: {ex.Message}");
+        Console.WriteLine($"Stack trace: {ex.StackTrace}");
+    }
 }
-catch (Exception ex)
+else
 {
-    Console.WriteLine($"Error configuring database context: {ex.Message}");
+    Console.WriteLine("ERROR: No connection string available, database will not be configured");
+    // Add a dummy DbContext to prevent DI errors
+    builder.Services.AddDbContext<FeedbackDbContext>(options =>
+        options.UseInMemoryDatabase("TestDb"));
 }
 
 // Add Swagger services
@@ -99,65 +113,62 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
-    // In production, you might want to handle exceptions differently
+    // In production, handle exceptions differently
     app.UseExceptionHandler("/Error");
 }
 
-// Add a diagnostic endpoint at the root
+// Add diagnostic endpoints
 app.MapGet("/", () => new
 {
     status = "UP",
     timestamp = DateTime.UtcNow,
-    message = "Feedback API is running"
+    message = "Feedback API is running",
+    connectionString = !string.IsNullOrEmpty(connectionString) ? "Configured" : "Not configured"
 });
 
-// Add health endpoint
 app.MapGet("/health", () => new
 {
     status = "UP",
     timestamp = DateTime.UtcNow,
-    databaseConnectionString = !string.IsNullOrEmpty(connectionString) ? "Configured" : "Not configured",
+    databaseConnectionString = !string.IsNullOrEmpty(connectionString) ? 
+        $"Configured (length: {connectionString.Length})" : "Not configured",
     environmentVariables = new 
     {
         port = Environment.GetEnvironmentVariable("PORT") ?? "Not set",
-        jawsDbUrl = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("JAWSDB_URL")) ? "Set" : "Not set",
+        jawsDbUrl = Environment.GetEnvironmentVariable("JAWSDB_URL") != null ? 
+            $"Set (length: {Environment.GetEnvironmentVariable("JAWSDB_URL").Length})" : "Not set",
         aspNetCoreEnvironment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Not set"
     }
 });
 
-// Ensure database is created and migrations are applied on startup - with robust error handling
-try
+// Test database after app startup, with better error handling
+if (!string.IsNullOrEmpty(connectionString))
 {
-    using (var scope = app.Services.CreateScope())
+    try
     {
-        Console.WriteLine("Attempting to resolve DbContext...");
-        var dbContext = scope.ServiceProvider.GetRequiredService<FeedbackDbContext>();
-        
-        Console.WriteLine("Testing database connection...");
-        var canConnect = dbContext.Database.CanConnect();
-        Console.WriteLine($"Database connection test: {(canConnect ? "Successful" : "Failed")}");
-        
-        if (canConnect)
+        using (var scope = app.Services.CreateScope())
         {
-            Console.WriteLine("Creating database if it doesn't exist...");
-            dbContext.Database.EnsureCreated();
-            Console.WriteLine("Database created/verified successfully");
-        }
-        else
-        {
-            Console.WriteLine("WARNING: Could not connect to database");
+            Console.WriteLine("Attempting to resolve DbContext...");
+            var dbContext = scope.ServiceProvider.GetRequiredService<FeedbackDbContext>();
+            
+            Console.WriteLine("Testing database connection...");
+            var canConnect = dbContext.Database.CanConnect();
+            Console.WriteLine($"Database connection test: {(canConnect ? "Successful" : "Failed")}");
+            
+            if (canConnect)
+            {
+                Console.WriteLine("Creating database if it doesn't exist...");
+                dbContext.Database.EnsureCreated();
+                Console.WriteLine("Database created/verified successfully");
+            }
         }
     }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"ERROR during database initialization: {ex.Message}");
+        Console.WriteLine($"Stack trace: {ex.StackTrace}");
+    }
 }
-catch (Exception ex)
-{
-    Console.WriteLine($"ERROR during database initialization: {ex.Message}");
-    Console.WriteLine($"Stack trace: {ex.StackTrace}");
-    // Continue app startup despite database errors
-}
-
-// For Heroku, disable HTTPS redirection
-app.UseHttpsRedirection();
 
 // Use CORS
 app.UseCors("AllowReactApp");
